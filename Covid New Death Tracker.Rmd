@@ -1,0 +1,194 @@
+---
+title: "covid_daily"
+author: "Max Davis"
+date: "3/25/2020"
+output: html_document
+---
+
+install.packages("readr")
+install.packages("tidyr")
+install.packages("ggplot2")
+install.packages("data.table")
+install.packages("dplyr")
+install.packages("lubridate")
+install.packages("curl")
+install.packages("knitr")
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(tidyr)
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(lubridate)
+library(curl)
+```
+
+Load daily data from European Center for Disease Control:
+
+```{r}
+covid_cumul <- (fread("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"))
+```
+Change to data.frame and change date format to system date format.
+```{r}
+
+covid_cumul <- data.frame(covid_cumul)
+```
+
+```{r}
+covid_cumul$dateRep <- format(as.Date(covid_cumul$dateRep, format="%d/%m/%Y"),"%Y-%m-%d")
+```
+
+Add feature:Deaths over Cases. deathRatio 
+
+```{r}
+  covid_cumul$deathRatio <-
+    covid_cumul$deaths / covid_cumul$cases
+```
+
+Create new feature: Cases as percentage of population. case_percentage.
+
+```{r}
+covid_cumul$case_percentage <-
+    covid_cumul$cases / covid_cumul$popData2019
+```
+
+Store system date as today
+
+```{r}
+today <- Sys.Date()
+```
+Show only data from today.
+
+covid_new <-
+    covid_cumul %>%
+    filter(deaths >= 1) %>%
+    filter(dateRep == today)
+
+
+View(covid_new)
+
+
+
+Number of new deaths
+
+
+sum(covid_new$deaths)
+
+Filter out wanted countries from cumulative data
+
+```{r}
+covid_hotspots <- 
+  covid_cumul %>%
+  filter(geoId == "EC" | geoId == "CO" | geoId == "HU" | geoId == "JO" | geoId == "US" | geoId == "CZ" | geoId == "UK" | geoId == "CN" | geoId == "NO" | geoId == "CA") 
+```         
+
+Filter out only new data from the hotspot data
+    
+```{r}
+ covid_hotspots_new <-
+  covid_hotspots %>%
+    filter(deaths >= 1) %>%
+    filter(dateRep == today)
+```
+
+PLot new deaths reported in hotspots:
+```{r}
+ ggplot(covid_hotspots, aes(x = geoId, y = deaths))+
+  geom_point() +
+  ggtitle("Deaths Reported Today in Hotspot Countries")
+  
+```
+
+Data Frame with only US data from mid march:
+
+```{r}
+covid_US <- 
+  covid_cumul %>%
+    filter(geoId == "US") %>%
+    filter(dateRep >= "2020-03-14")
+
+```
+
+Data Frame with hotspot data from mid march
+
+```{r}
+covid_march_compare <-
+    covid_hotspots %>%
+    filter(dateRep >= "2020-03-15")
+```
+Data frame with hotspot data from after July 4
+```{r}
+covid_july_compare <- 
+    covid_hotspots %>%
+    filter(dateRep >= "2020-07-04")
+```
+
+
+Plot change in US cases over time, compare with other hotspots
+
+```{r}
+covid_march_compare %>%
+  ggplot(aes(x = as.Date(dateRep), y = cases)) +
+  geom_line(aes(color = countriesAndTerritories)) +
+  ggtitle("New Cases over Time in Top Countries") +
+  labs(x = "Date", y = "Reported Cases", color = "Country")
+```
+
+Visualize ratio of deaths to cases reported.
+Plot deathRatio to compare countries.
+
+```{r}
+covid_march_compare %>%
+  ggplot(aes(x = as.Date(dateRep), y = deathRatio)) +
+  geom_line(aes(color = countriesAndTerritories)) +
+  ggtitle("Ratio of deaths to new cases") +
+  labs(x = "Date", y = "Ratio of Deaths to new Cases", color = "Country")
+```
+
+
+
+
+
+Plot the percentage of cases to population since May 15. Still plots march? 
+
+
+```{r}
+covid_july_compare %>%
+  ggplot(aes(x = as.Date(dateRep), y = case_percentage)) +
+  geom_line(aes(color = countriesAndTerritories)) +
+  ggtitle("Cases as Percentage of Population Over Time") +
+  labs(x = "Date", y = "Cases as Percentage of Population", color = "Country")
+```
+
+
+Looking at China
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

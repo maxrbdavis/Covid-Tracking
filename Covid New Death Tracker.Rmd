@@ -29,6 +29,8 @@ library(data.table)
 library(dplyr)
 library(lubridate)
 library(curl)
+library(RColorBrewer)
+
 ```
 
 Load daily data from European Center for Disease Control:
